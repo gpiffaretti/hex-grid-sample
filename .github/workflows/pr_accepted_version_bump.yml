@@ -1,0 +1,44 @@
+name: PR accepted => version bump
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  #### JOB ####
+  versionUp:
+    name: Version bump
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Necessary for conventional changelog
+      - name: Pull tags for conventional changelog
+        run: |
+          echo "GITHUB_REF: ${GITHUB_REF}"
+          git pull --unshallow --tags origin HEAD:${GITHUB_REF}
+      # Generate changelog with conventional commits
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: gpiffaretti/conventional-changelog-action@feature/unity-versioning
+        with:
+          github-token: ${{ secrets.github_token }}
+          output-file: "CHANGELOG.md"
+          skip-tag: "false"
+          release-count: 0
+          skip-commit: "false"
+          git-message: "{changelog}"
+          skip-version-file: "false"
+          skip-on-empty: "false"
+          version-file: "./GBAR/ProjectSettings/ProjectSettings.asset"
+          version-file-type: "yml"
+          version-path: "PlayerSettings.bundleVersion"
+
+      # Just print for visibility and understanding
+      - name: Print changelog
+        run: |
+          echo "${{ steps.changelog.outputs.clean_changelog }}"
